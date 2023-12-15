@@ -70,7 +70,7 @@ def list_instances(update: Update, context: CallbackContext) -> None:
             instances_info.append(f"ID: `{instance_id}`, {instance_name}, {instance_state}")
     
     reply_text = '\n'.join(instances_info)
-    update.message.reply_markdown_v2(reply_text)
+    update.message.reply_markdown(reply_text)
 
 @log_request
 @check_user
