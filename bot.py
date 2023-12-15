@@ -36,7 +36,7 @@ def log_request(func):
 def check_user(func):
     def wrapper(update: Update, context: CallbackContext, *args, **kwargs):
         user_name = update.effective_user.id
-        if user_name != '5566017231':
+        if user_name != 5566017231:
             update.message.reply_text("You are not authorized to use this command.")
             return
         return func(update, context, *args, **kwargs)
