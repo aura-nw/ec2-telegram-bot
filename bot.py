@@ -1,6 +1,6 @@
 import os
 import logging
-from telegram import Update
+from telegram import Update, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext
 import signal
 import boto3
@@ -32,8 +32,20 @@ def log_request(func):
 
     return wrapper
 
+# Command functions with logging and user check
+def check_user(func):
+    def wrapper(update: Update, context: CallbackContext, *args, **kwargs):
+        user_name = update.effective_user.id
+        if user_name != '5566017231':
+            update.message.reply_text("You are not authorized to use this command.")
+            return
+        return func(update, context, *args, **kwargs)
+
+    return wrapper
+    
 # Command functions with logging
 @log_request
+@check_user
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hi! I am your EC2 control bot. Use /help to see available commands.')
 
@@ -46,6 +58,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
                               '/force_stop_instance <instance_id> - Force stop an EC2 instance\n')
 
 @log_request
+@check_user
 def list_instances(update: Update, context: CallbackContext) -> None:
     response = ec2.describe_instances()
     instances_info = []
@@ -55,29 +68,34 @@ def list_instances(update: Update, context: CallbackContext) -> None:
             instance_id = instance['InstanceId']
             instance_state = instance['State']['Name']
             instance_name = next((tag['Value'] for tag in instance.get('Tags', []) if tag['Key'] == 'Name'), 'N/A')
-            instances_info.append(f"ID: `{instance_id}`, Name: {instance_name}, State: {instance_state}\n")
-
-    update.message.reply_text('\n'.join(instances_info))
+            instances_info.append(f"ID: `{instance_id}`, {instance_name}, {instance_state}")
+    
+    reply_text = '\n'.join(instances_info)
+    update.message.reply_markdown(reply_text, parse_mode=ParseMode.MARKDOWN)
 
 @log_request
+@check_user
 def start_instance(update: Update, context: CallbackContext) -> None:
     instance_id = context.args[0]
     ec2.start_instances(InstanceIds=[instance_id])
     update.message.reply_text(f'Starting instance {instance_id}...')
 
 @log_request
+@check_user
 def stop_instance(update: Update, context: CallbackContext) -> None:
     instance_id = context.args[0]
     ec2.stop_instances(InstanceIds=[instance_id])
     update.message.reply_text(f'Stopping instance {instance_id}...')
 
 @log_request
+@check_user
 def force_stop_instance(update: Update, context: CallbackContext) -> None:
     instance_id = context.args[0]
     ec2.terminate_instances(InstanceIds=[instance_id])
     update.message.reply_text(f'Force stopping instance {instance_id}...')
 
 @log_request
+@check_user
 def restart_instance(update: Update, context: CallbackContext) -> None:
     instance_id = context.args[0]
     ec2.stop_instances(InstanceIds=[instance_id])
