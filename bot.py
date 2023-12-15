@@ -2,9 +2,7 @@ import os
 import logging
 from telegram import Update, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext
-import signal
 import boto3
-import sys
 
 # Configure logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -126,18 +124,8 @@ def main() -> None:
     # Start the Bot
     updater.start_polling(poll_interval=bot_poll_interval)
 
-    # Set up a timer to stop the bot after idle_time seconds
-    signal.signal(signal.SIGALRM, lambda signum, frame: signal_handler)
-    signal.alarm(bot_idle_time)
-
-    # Graceful shutdown on Ctrl+C
-    signal.signal(signal.SIGINT, signal_handler)
+    # Run the bot until you send a signal to stop
     updater.idle()
-
-def signal_handler(signal, frame):
-    print("Bot stopped.")
-    updater.stop()
-    sys.exit(0)
     
 if __name__ == '__main__':
     main()
