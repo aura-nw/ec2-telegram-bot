@@ -67,8 +67,13 @@ def list_instances(update: Update, context: CallbackContext) -> None:
             instance_id = instance['InstanceId']
             instance_state = instance['State']['Name']
             instance_name = next((tag['Value'] for tag in instance.get('Tags', []) if tag['Key'] == 'Name'), 'N/A')
-            instances_info.append(f"ID: `{instance_id}`, {instance_name}, {instance_state}")
-    
+
+            # Get status checks
+            status_checks = ec2.describe_instance_status(InstanceIds=[instance_id])['InstanceStatuses']
+            status_check_info = "| ".join([f"{check['Status']}: {check['Details'][0]['Status']}" for check in status_checks])
+            
+            instances_info.append(f"- ID: `{instance_id}`, {instance_name}, {instance_state}, {status_check_info}")
+            
     reply_text = '\n'.join(instances_info)
     update.message.reply_markdown(reply_text)
 
