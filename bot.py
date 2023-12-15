@@ -42,7 +42,8 @@ def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('/list - List all EC2 instances\n'
                               '/start_instance <instance_id> - Start an EC2 instance\n'
                               '/stop_instance <instance_id> - Stop an EC2 instance\n'
-                              '/restart_instance <instance_id> - Restart an EC2 instance\n')
+                              '/restart_instance <instance_id> - Restart an EC2 instance\n'
+                              '/force_stop_instance <instance_id> - Force stop an EC2 instance\n')
 
 @log_request
 def list_instances(update: Update, context: CallbackContext) -> None:
@@ -54,7 +55,7 @@ def list_instances(update: Update, context: CallbackContext) -> None:
             instance_id = instance['InstanceId']
             instance_state = instance['State']['Name']
             instance_name = next((tag['Value'] for tag in instance.get('Tags', []) if tag['Key'] == 'Name'), 'N/A')
-            instances_info.append(f"ID: {instance_id}, Name: {instance_name}, State: {instance_state}")
+            instances_info.append(f"ID: `{instance_id}`, Name: {instance_name}, State: {instance_state}\n")
 
     update.message.reply_text('\n'.join(instances_info))
 
