@@ -49,12 +49,14 @@ def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hi! I am your EC2 control bot. Use /help to see available commands.')
 
 @log_request
+@check_user
 def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('/list - List all EC2 instances\n'
                               '/start_instance <instance_id> - Start an EC2 instance\n'
                               '/stop_instance <instance_id> - Stop an EC2 instance\n'
                               '/restart_instance <instance_id> - Restart an EC2 instance\n'
-                              '/force_stop_instance <instance_id> - Force stop an EC2 instance\n')
+                              '/force_stop_instance <instance_id> - Force stop an EC2 instance\n'
+                              '/change_instance_type <instance_id> <ec2-type> - Change EC2 instance type\n')
 
 @log_request
 @check_user
@@ -67,12 +69,13 @@ def list_instances(update: Update, context: CallbackContext) -> None:
             instance_id = instance['InstanceId']
             instance_state = instance['State']['Name']
             instance_name = next((tag['Value'] for tag in instance.get('Tags', []) if tag['Key'] == 'Name'), 'N/A')
+            instance_type = instance['InstanceType']
 
             # Get status checks
             status_checks = ec2.describe_instance_status(InstanceIds=[instance_id])['InstanceStatuses'][0]
             status_check_info = f"InstanceStatus: {status_checks['InstanceStatus']['Status']} | SystemStatus: {status_checks['SystemStatus']['Status']}"
             
-            instances_info.append(f"- ID: `{instance_id}`, *{instance_name}*, {instance_state}\n{status_check_info}")
+            instances_info.append(f"- ID: `{instance_id}`, *{instance_name}*, {instance_type}, {instance_state}\n{status_check_info}")
             
     reply_text = '\n'.join(instances_info)
     update.message.reply_markdown(reply_text)
@@ -106,6 +109,22 @@ def restart_instance(update: Update, context: CallbackContext) -> None:
     ec2.start_instances(InstanceIds=[instance_id])
     update.message.reply_text(f'Restarting instance {instance_id}...')
 
+@log_request
+@check_user
+def change_instance_type(update: Update, context: CallbackContext) -> None:
+    if len(context.args) != 2:
+        update.message.reply_text("Please provide both the instance ID and the new instance type.")
+        return
+
+    instance_id = context.args[0]
+    new_instance_type = context.args[1]
+
+    try:
+        ec2.modify_instance_attribute(InstanceId=instance_id, InstanceType={'Value': new_instance_type})
+        update.message.reply_text(f"Instance type for {instance_id} has been changed to {new_instance_type}.")
+    except Exception as e:
+        update.message.reply_text(f"Failed to change instance type. Error: {str(e)}")
+        
 def main() -> None:
     # Get the bot token from environment variable
     token = os.environ.get('TELEGRAM_BOT_TOKEN')
@@ -125,6 +144,7 @@ def main() -> None:
     dp.add_handler(CommandHandler("stop_instance", stop_instance, pass_args=True))
     dp.add_handler(CommandHandler("restart_instance", restart_instance, pass_args=True))
     dp.add_handler(CommandHandler("force_stop_instance", force_stop_instance, pass_args=True))
+    dp.add_handler(CommandHandler("change_instance_type", change_instance_type, pass_args=True))
 
     # Start the Bot
     updater.start_polling(poll_interval=bot_poll_interval)
