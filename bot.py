@@ -72,9 +72,11 @@ def list_instances(update: Update, context: CallbackContext) -> None:
             instance_type = instance['InstanceType']
 
             # Get status checks
-            status_checks = ec2.describe_instance_status(InstanceIds=[instance_id])['InstanceStatuses'][0]
-            status_check_info = f"InstanceStatus: {status_checks['InstanceStatus']['Status']} | SystemStatus: {status_checks['SystemStatus']['Status']}"
-            
+            if instance_state == 'running':
+                status_checks = ec2.describe_instance_status(InstanceIds=[instance_id])['InstanceStatuses'][0]
+                status_check_info = f"InstanceStatus: {status_checks['InstanceStatus']['Status']} | SystemStatus: {status_checks['SystemStatus']['Status']}"
+            else:
+                status_check_info = "N/A (Instance is stopped)"
             instances_info.append(f"- ID: `{instance_id}`, *{instance_name}*, {instance_type}, {instance_state}\n{status_check_info}")
             
     reply_text = '\n'.join(instances_info)
