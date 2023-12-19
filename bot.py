@@ -100,7 +100,7 @@ def stop_instance(update: Update, context: CallbackContext) -> None:
 @check_user
 def force_stop_instance(update: Update, context: CallbackContext) -> None:
     instance_id = context.args[0]
-    ec2.terminate_instances(InstanceIds=[instance_id])
+    ec2.stop_instances(InstanceIds=[instance_id],Force=True)
     update.message.reply_text(f'Force stopping instance {instance_id}...')
 
 @log_request
