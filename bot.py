@@ -70,6 +70,7 @@ def list_instances(update: Update, context: CallbackContext) -> None:
             instance_state = instance['State']['Name']
             instance_name = next((tag['Value'] for tag in instance.get('Tags', []) if tag['Key'] == 'Name'), 'N/A')
             instance_type = instance['InstanceType']
+            instance_ip = instance['PrivateIpAddress']
 
             # Get status checks
             if instance_state == 'running':
@@ -77,7 +78,7 @@ def list_instances(update: Update, context: CallbackContext) -> None:
                 status_check_info = f"InstanceStatus: {status_checks['InstanceStatus']['Status']} | SystemStatus: {status_checks['SystemStatus']['Status']}"
             else:
                 status_check_info = "N/A (Instance is stopped)"
-            instances_info.append(f"- ID: `{instance_id}`, *{instance_name}*, {instance_type}, {instance_state}\n{status_check_info}")
+            instances_info.append(f"- ID: `{instance_id}`, *{instance_name}*, *{instance_ip}*, {instance_type}, {instance_state}\n{status_check_info}")
             
     reply_text = '\n'.join(instances_info)
     update.message.reply_markdown(reply_text)
